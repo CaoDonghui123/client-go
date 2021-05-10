@@ -4,13 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -31,13 +30,20 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	for {
-		pods, err := clientset.CoreV1().Pods("").List(context.TODO(),metav1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
-		time.Sleep(10 * time.Second)
+
+	//查询pod信息
+	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	for index, pod := range pods.Items {
+		fmt.Printf("pod: %v  %v node:%v\n", index, pod.Name, pod.Spec.NodeName)
+	}
+
+	//查询api
+	api, rs, err := discovery.ServerGroupsAndResources(clientset)
+	for index, value := range rs {
+		fmt.Printf("rs:%v  %v\n", index, value.GroupVersion)
+	}
+	for index, value := range api {
+		fmt.Printf("rs:%v  %v\n", index, value.Name)
 	}
 }
 
